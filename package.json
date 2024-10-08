@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "morgan": "^1.10.0",
+    "node-fetch": "^3.3.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "website-analyzer-tool",
+  "description": "\"# Website-Analyzer-Tool\"",
+  "version": "1.0.0",
+  "main": "script.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
