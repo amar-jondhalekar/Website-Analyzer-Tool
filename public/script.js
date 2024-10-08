@@ -1,6 +1,6 @@
-const IPINFO_API_KEY = 'a547b3a15f74a9'; // Your IPInfo API key
-const WHOIS_API_KEY = '9_WridhUPJezGI9FzuVvvA'; // Your Whois API key
-const PAGESPEED_API_KEY = 'AIzaSyDrtdA4L4fmewyDjrTyF0ANAX6IC0aLE20'; // Your PageSpeed API key
+const IPINFO_API_KEY = ''; // Your IPInfo API key
+const WHOIS_API_KEY = ''; // Your Whois API key
+const PAGESPEED_API_KEY = ''; // Your PageSpeed API key
 
 // Get DOM elements
 const analyzeBtn = document.getElementById('analyzeBtn');
