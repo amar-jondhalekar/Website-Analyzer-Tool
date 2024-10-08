@@ -1,21 +1,20 @@
-// script.js
 const IPINFO_API_KEY = 'a547b3a15f74a9'; // Your IPInfo API key
 const WHOIS_API_KEY = '9_WridhUPJezGI9FzuVvvA'; // Your Whois API key
 const PAGESPEED_API_KEY = 'AIzaSyDrtdA4L4fmewyDjrTyF0ANAX6IC0aLE20'; // Your PageSpeed API key
-
 
 // Get DOM elements
 const analyzeBtn = document.getElementById('analyzeBtn');
 const websiteInput = document.getElementById('website');
 const resultsDiv = document.getElementById('results');
 
-const morgan = require('morgan');
-app.use(morgan('combined')); // Log requests to the console
-
 // Analyze button click event
 analyzeBtn.addEventListener('click', () => {
-    const website = websiteInput.value.trim();
+    let website = websiteInput.value.trim();
     if (website) {
+        // Basic URL validation and correction
+        if (!/^https?:\/\//i.test(website)) {
+            website = 'http://' + website; // Prepend HTTP if missing
+        }
         resultsDiv.innerHTML = `<p>Analyzing ${website}...</p>`;
         getWebsiteInfo(website);
     } else {
@@ -29,20 +28,24 @@ async function getWebsiteInfo(website) {
         const ipInfo = await getIPInfo(website);
         const domainInfo = await getDomainInfo(website);
         const pageSpeedInfo = await getPageSpeed(website);
-        
         const seoAnalysis = analyzeSEO(website);
 
         displayResults(ipInfo, domainInfo, pageSpeedInfo, seoAnalysis);
     } catch (error) {
         console.error(error);
-        resultsDiv.innerHTML = `<p>Sorry, something went wrong. Please try again.</p>`;
+        resultsDiv.innerHTML = `<p>Sorry, something went wrong. ${error.message}</p>`;
     }
 }
 
 // IP and DNS Info using IPinfo API
 async function getIPInfo(website) {
     const domain = extractDomain(website);
-    const response = await fetch(`http://127.0.0.1:3001/api/ipinfo/${domain}`);
+    const response = await fetch(`https://127.0.0.1:3001/api/ipinfo/${domain}`);
+    
+    if (!response.ok) {
+        throw new Error(`Failed to fetch IP information: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return {
         ip: data.ip,
@@ -56,6 +59,11 @@ async function getIPInfo(website) {
 // Domain Name Info using Whois API
 async function getDomainInfo(website) {
     const response = await fetch(`https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOIS_API_KEY}&domainName=${website}&outputFormat=JSON`);
+    
+    if (!response.ok) {
+        throw new Error(`Failed to fetch domain information: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return {
         domainName: data.WhoisRecord.domainName,
@@ -68,6 +76,11 @@ async function getDomainInfo(website) {
 // Website Performance using Google PageSpeed API
 async function getPageSpeed(website) {
     const response = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${website}&key=${PAGESPEED_API_KEY}`);
+    
+    if (!response.ok) {
+        throw new Error(`Failed to fetch page speed information: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return {
         performanceScore: data.lighthouseResult.categories.performance.score * 100,
@@ -78,7 +91,6 @@ async function getPageSpeed(website) {
 
 // Basic SEO Analysis
 function analyzeSEO(website) {
-    // Simple SEO check (meta tags, headers, etc.)
     const tags = document.querySelectorAll('meta');
     const seoScore = tags.length > 5 ? 'Good' : 'Needs Improvement';
     return { seoScore };
@@ -115,6 +127,10 @@ function displayResults(ipInfo, domainInfo, pageSpeedInfo, seoAnalysis) {
 
 // Helper function to extract domain from URL
 function extractDomain(url) {
-    const domain = new URL(url).hostname;
-    return domain;
+    try {
+        const domain = new URL(url).hostname;
+        return domain;
+    } catch (error) {
+        throw new Error('Invalid URL format. Please enter a valid website URL.');
+    }
 }

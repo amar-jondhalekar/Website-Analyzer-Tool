@@ -1,50 +1,50 @@
-require('dotenv').config(); // Load environment variables
+const fs = require('fs');
+const https = require('http');
 const express = require('express');
-const axios = require('axios');
+const path = require('path');
 const cors = require('cors');
-const morgan = require('morgan');
 
 const app = express();
-const PORT = 3001;
-const IPINFO_API_KEY = process.env.IPINFO_API_KEY; // Use environment variable for API key
+app.use(cors());
 
-// Enable CORS
-app.use(cors({
-    origin: 'http://127.0.0.1:3000'
-}));
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(morgan('combined')); // Log requests
-
-// Root route
+// Define a simple route to serve an HTML file
 app.get('/', (req, res) => {
-    res.send('API is running');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Validate IP format
-const isValidIP = (ip) => /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+// Define the paths to your key and certificate
+const serverOptions = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH || 'C:\\Program Files\\OpenSSL-Win64\\bin\\server.key'),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH || 'C:\\Program Files\\OpenSSL-Win64\\bin\\server.cert'),
+};
 
-// IP Info API endpoint
-app.get('/api/ipinfo/:ip', async (req, res) => {
-    const ip = req.params.ip;
-    if (!isValidIP(ip)) {
-        return res.status(400).json({ error: 'Invalid IP address format' });
-    }
+// Add this route in your server.js file
+app.get('/api/ipinfo/:domain', async (req, res) => {
+    const domain = req.params.domain;
+
+    // Use the IPInfo API to fetch the IP information
     try {
-        const response = await axios.get(`https://ipinfo.io/${ip}?token=${IPINFO_API_KEY}`);
-        res.json(response.data);
+        const response = await fetch(`http://ipinfo.io/${domain}/json?token=${IPINFO_API_KEY}`);
+        const data = await response.json();
+        res.json(data);
     } catch (error) {
-        console.error(error);
-        if (error.response) {
-            res.status(error.response.status).json({ error: error.response.data });
-        } else if (error.request) {
-            res.status(500).json({ error: 'No response received from IPInfo API' });
-        } else {
-            res.status(500).json({ error: error.message });
-        }
+        res.status(500).json({ error: 'Failed to fetch IP information' });
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Proxy server running at http://127.0.0.1:${PORT}`);
+
+// Create the HTTPS server
+const server = http.createServer(serverOptions, app);
+
+// Start the server with error handling
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, (err) => {
+    if (err) {
+        console.error('Failed to start server:', err);
+    } else {
+        console.log(`Server is running at https://localhost:${PORT}`);
+    }
 });
